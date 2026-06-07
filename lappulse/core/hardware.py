@@ -13,17 +13,23 @@ class HardwareMonitor:
             default_data = {
                 "continuous_full_charge_seconds": 0,
                 "last_checked_time": time.time(),
-                "last_notification_time": 0, # 🚨 අලුතින් එකතු කළා
-                "maintenance_interval_seconds": 30
+                "last_notification_time": 0,
+                "maintenance_interval_seconds": 30,
+                "theme": "dark"
             }
             with open(self.db_path, "w") as f:
                 json.dump(default_data, f)
         else:
-            # පරණ JSON එකක් තිබ්බොත් ඒකටත් last_notification_time එක auto දානවා
             with open(self.db_path, "r") as f:
                 data = json.load(f)
+            changed = False
             if "last_notification_time" not in data:
                 data["last_notification_time"] = 0
+                changed = True
+            if "theme" not in data:
+                data["theme"] = "dark"
+                changed = True
+            if changed:
                 with open(self.db_path, "w") as f:
                     json.dump(data, f)
 
