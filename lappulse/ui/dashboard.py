@@ -10,7 +10,7 @@ class DashboardWindow(QMainWindow):
         
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_dashboard)
-        self.timer.start(1000) # හැම තත්පරයකටම Update කරමු (Faster & Smoother)
+        self.timer.start(1000)
 
     def init_ui(self):
         self.setWindowTitle("LapPulse v1.0 Pro")
@@ -39,7 +39,7 @@ class DashboardWindow(QMainWindow):
         self.bat_value = QLabel("--%")
         self.bat_value.setObjectName("CardValue")
         
-        # 🔋 Battery Progress Bar එක
+        # 🔋 Battery Progress Bar
         self.bat_bar = QProgressBar()
         self.bat_bar.setValue(0)
         
@@ -72,7 +72,7 @@ class DashboardWindow(QMainWindow):
         self.cpu_value = QLabel("--%")
         self.cpu_value.setObjectName("CardValue")
         
-        # 📈 CPU Progress Bar එක
+        # 📈 CPU Progress Bar
         self.cpu_bar = QProgressBar()
         self.cpu_bar.setValue(0)
         
@@ -84,16 +84,25 @@ class DashboardWindow(QMainWindow):
     def update_dashboard(self):
         metrics = self.monitor.get_system_metrics()
         
-        # Text සහ Progress Bars අප්ඩේට් කිරීම
+        # UI update 
         self.bat_value.setText(f"{metrics['battery_percent']}%")
         self.bat_bar.setValue(metrics['battery_percent'])
-        
         self.cpu_value.setText(f"{metrics['cpu_usage']}%")
         self.cpu_bar.setValue(int(metrics['cpu_usage']))
         
         if metrics['is_plugged']:
             self.char_value.setText("⚡ PLUGGED IN (Direct AC Power)")
-            self.char_value.setStyleSheet("color: #34D399;") # Premium Green
+            self.char_value.setStyleSheet("color: #34D399;")
+            
+            # 🚨 Smart Notification Alert Trigger
+            if metrics['trigger_discharge_alert']:
+                from plyer import notification
+                notification.notify(
+                    title="🔋 LapPulse Maintenance Alert",
+                    message="ඔයාගේ ලැප් එක දිගටම ප්ලග් කරලයි තියෙන්නේ! බැටරියේ රසායනික ක්‍රියාකාරීත්වය රැක ගැනීමට කරුණාකර චාජරය ගලවා 20% වන තෙක් පාවිච්චි කරන්න.",
+                    app_name="LapPulse",
+                    timeout=10
+                )
         else:
             self.char_value.setText("🔋 BATTERY MODE (Discharging)")
-            self.char_value.setStyleSheet("color: #FB923C;") # Premium Orange
+            self.char_value.setStyleSheet("color: #FB923C;")
