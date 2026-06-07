@@ -1,7 +1,10 @@
 import json
-from PyQt6.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QProgressBar, QPushButton, QDialog, QSpinBox, QComboBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QProgressBar, QPushButton, QDialog, QSpinBox, QComboBox, QCheckBox
 from PyQt6.QtCore import QTimer, Qt
 from lappulse.core.hardware import HardwareMonitor
+
+DARK_QSS_PATH = "lappulse/ui/style.qss"
+LIGHT_QSS_PATH = "lappulse/ui/style_light.qss"
 
 
 class SettingsDialog(QDialog):
@@ -12,56 +15,60 @@ class SettingsDialog(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("Settings")
-        self.setFixedSize(320, 220)
-        
+        self.setFixedSize(320, 280)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        # Title Label
+        # Maintenance interval section
         lbl = QLabel("Set Maintenance Interval:")
         lbl.setObjectName("CardTitle")
         layout.addWidget(lbl)
 
-        # Input Layout (Dropdown + SpinBox)
         input_layout = QHBoxLayout()
 
-        # 🔄 Dropdown 
         self.unit_combo = QComboBox()
         self.unit_combo.addItems(["Days", "Seconds"])
-        
-        # Input Number Box
+
         self.interval_input = QSpinBox()
         self.interval_input.setRange(1, 3600)
-        
+
         input_layout.addWidget(self.interval_input)
         input_layout.addWidget(self.unit_combo)
         layout.addLayout(input_layout)
 
-       
         with open(self.db_path, "r") as f:
             data = json.load(f)
-        
-      
+
         saved_seconds = data.get("maintenance_interval_seconds", 30)
-         
-        if saved_seconds >= 86400: #  86400 seconds per day 
+
+        if saved_seconds >= 86400:
             self.interval_input.setValue(int(saved_seconds / 86400))
             self.unit_combo.setCurrentText("Days")
         else:
             self.interval_input.setValue(saved_seconds)
             self.unit_combo.setCurrentText("Seconds")
 
-        # Buttons (Save & Cancel)
+        # Appearance section
+        appearance_lbl = QLabel("Appearance:")
+        appearance_lbl.setObjectName("CardTitle")
+        layout.addWidget(appearance_lbl)
+
+        self.light_mode_check = QCheckBox("Enable Light Mode")
+        self.light_mode_check.setChecked(data.get("theme", "dark") == "light")
+        layout.addWidget(self.light_mode_check)
+
+        # Buttons
         btn_layout = QHBoxLayout()
-        
+
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setObjectName("CancelButton")
         cancel_btn.clicked.connect(self.reject)
-        
+
         save_btn = QPushButton("Save Settings")
         save_btn.clicked.connect(self.save_settings)
-        
+
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(save_btn)
         layout.addLayout(btn_layout)
@@ -69,22 +76,30 @@ class SettingsDialog(QDialog):
     def save_settings(self):
         value = self.interval_input.value()
         unit = self.unit_combo.currentText()
-        
-        
+
         if unit == "Days":
             final_seconds = value * 24 * 60 * 60
         else:
-            final_seconds = value 
+            final_seconds = value
+
+        theme = "light" if self.light_mode_check.isChecked() else "dark"
 
         with open(self.db_path, "r") as f:
             data = json.load(f)
-        
-        
+
         data["maintenance_interval_seconds"] = final_seconds
-        
+        data["theme"] = theme
+
         with open(self.db_path, "w") as f:
             json.dump(data, f)
-            
+
+        qss_path = LIGHT_QSS_PATH if theme == "light" else DARK_QSS_PATH
+        try:
+            with open(qss_path, "r", encoding="utf-8") as f:
+                QApplication.instance().setStyleSheet(f.read())
+        except FileNotFoundError:
+            pass
+
         self.accept()
 
 
