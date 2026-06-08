@@ -66,7 +66,7 @@ class HardwareMonitor:
             if data["continuous_full_charge_seconds"] >= user_interval:
                 if current_time - data["last_notification_time"] >= user_interval:
                     should_notify = True
-                    data["last_notification_time"] = current_time # වෙලාව සේව් කරගන්නවා
+                    data["last_notification_time"] = current_time 
         else:
             
             data["continuous_full_charge_seconds"] = 0

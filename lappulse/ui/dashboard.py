@@ -210,11 +210,11 @@ class DashboardWindow(QMainWindow):
             if metrics['trigger_discharge_alert']:
                 from plyer import notification
                 notification.notify(
-                    title="🔋 LapPulse Maintenance Alert",
-                    message="ඔයාගේ ලැප් එක දිගටම ප්ලග් කරලයි තියෙන්නේ! බැටරියේ රසායනික ක්‍රියාකාරීත්වය රැක ගැනීමට කරුණාකර චාජරය ගලවා 20% වන තෙක් පාවිච්චි කරන්න.",
-                    app_name="LapPulse",
-                    timeout=10
-                )
+    title="🔋 LapPulse Maintenance Alert",
+    message="Your laptop has been plugged in for too long! To preserve battery health, please unplug the charger and let it discharge to 20%.",
+    app_name="LapPulse",
+    timeout=10
+)
         else:
             self.char_value.setText("🔋 BATTERY MODE (Discharging)")
             self.char_value.setStyleSheet("color: #FB923C;")
