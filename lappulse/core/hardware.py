@@ -62,14 +62,13 @@ class HardwareMonitor:
             data["continuous_full_charge_seconds"] += time_diff
             user_interval = data.get("maintenance_interval_seconds", 30)
             
-            # 💡 Smart Condition: සීමාව පැනලා තියෙන්න ඕනේ වගේම,
-            # අන්තිමට notification එක දාලා දැනට තත්පර 30ක්වත් (Cooldown) ගත වෙලා තියෙන්න ඕනේ.
+           
             if data["continuous_full_charge_seconds"] >= user_interval:
                 if current_time - data["last_notification_time"] >= user_interval:
                     should_notify = True
                     data["last_notification_time"] = current_time # වෙලාව සේව් කරගන්නවා
         else:
-            # චාජරය ගැලෙවුවොත් ඔක්කොම Reset වෙනවා
+            
             data["continuous_full_charge_seconds"] = 0
             data["last_notification_time"] = 0
 
