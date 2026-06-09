@@ -13,17 +13,23 @@ class HardwareMonitor:
             default_data = {
                 "continuous_full_charge_seconds": 0,
                 "last_checked_time": time.time(),
-                "last_notification_time": 0, # 🚨 අලුතින් එකතු කළා
-                "maintenance_interval_seconds": 30
+                "last_notification_time": 0,
+                "maintenance_interval_seconds": 30,
+                "theme": "dark"
             }
             with open(self.db_path, "w") as f:
                 json.dump(default_data, f)
         else:
-            # පරණ JSON එකක් තිබ්බොත් ඒකටත් last_notification_time එක auto දානවා
             with open(self.db_path, "r") as f:
                 data = json.load(f)
+            changed = False
             if "last_notification_time" not in data:
                 data["last_notification_time"] = 0
+                changed = True
+            if "theme" not in data:
+                data["theme"] = "dark"
+                changed = True
+            if changed:
                 with open(self.db_path, "w") as f:
                     json.dump(data, f)
 
@@ -56,14 +62,13 @@ class HardwareMonitor:
             data["continuous_full_charge_seconds"] += time_diff
             user_interval = data.get("maintenance_interval_seconds", 30)
             
-            # 💡 Smart Condition: සීමාව පැනලා තියෙන්න ඕනේ වගේම,
-            # අන්තිමට notification එක දාලා දැනට තත්පර 30ක්වත් (Cooldown) ගත වෙලා තියෙන්න ඕනේ.
+           
             if data["continuous_full_charge_seconds"] >= user_interval:
                 if current_time - data["last_notification_time"] >= user_interval:
                     should_notify = True
-                    data["last_notification_time"] = current_time # වෙලාව සේව් කරගන්නවා
+                    data["last_notification_time"] = current_time 
         else:
-            # චාජරය ගැලෙවුවොත් ඔක්කොම Reset වෙනවා
+            
             data["continuous_full_charge_seconds"] = 0
             data["last_notification_time"] = 0
 

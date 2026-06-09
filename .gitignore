@@ -9,3 +9,5 @@ venv/
 # IDE settings
 .vscode/
 .idea/
+
+lappulse_data.json
