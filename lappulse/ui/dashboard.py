@@ -1,6 +1,12 @@
 import json
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QProgressBar, QPushButton, QDialog, QSpinBox, QComboBox, QCheckBox
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout,
+    QHBoxLayout, QFrame, QProgressBar, QPushButton, QDialog,
+    QSpinBox, QComboBox, QCheckBox,
+    QSystemTrayIcon, QMenu
+)
+from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtCore import QTimer, Qt, QEvent
 from lappulse.core.hardware import HardwareMonitor
 
 DARK_QSS_PATH = "lappulse/ui/style.qss"
@@ -109,14 +115,14 @@ class DashboardWindow(QMainWindow):
         super().__init__()
         self.monitor = HardwareMonitor()
         self.init_ui()
-        
+        self.init_tray()
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_dashboard)
         self.timer.start(1000)
 
     def init_ui(self):
         self.setWindowTitle("LapPulse v1.0 Pro")
-        self.setFixedSize(400, 650) 
+        self.setFixedSize(400, 650)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -128,12 +134,12 @@ class DashboardWindow(QMainWindow):
         header_layout = QHBoxLayout()
         title_label = QLabel("⚡ LapPulse Pro")
         title_label.setObjectName("MainTitle")
-        
+
         settings_btn = QPushButton("⚙️")
         settings_btn.setFixedSize(35, 35)
         settings_btn.setStyleSheet("font-size: 16px; padding: 0px;")
         settings_btn.clicked.connect(self.open_settings)
-        
+
         header_layout.addWidget(title_label)
         header_layout.addSpacing(10)
         header_layout.addWidget(settings_btn, alignment=Qt.AlignmentFlag.AlignRight)
@@ -144,15 +150,15 @@ class DashboardWindow(QMainWindow):
         self.battery_card.setObjectName("Card")
         bat_layout = QVBoxLayout(self.battery_card)
         bat_layout.setContentsMargins(15, 15, 15, 15)
-        
+
         bat_title = QLabel("Battery Status")
         bat_title.setObjectName("CardTitle")
         self.bat_value = QLabel("--%")
         self.bat_value.setObjectName("CardValue")
-        
+
         self.bat_bar = QProgressBar()
         self.bat_bar.setValue(0)
-        
+
         bat_layout.addWidget(bat_title)
         bat_layout.addWidget(self.bat_value)
         bat_layout.addWidget(self.bat_bar)
@@ -162,12 +168,12 @@ class DashboardWindow(QMainWindow):
         self.charger_card = QFrame()
         self.charger_card.setObjectName("Card")
         char_layout = QVBoxLayout(self.charger_card)
-        
+
         char_title = QLabel("Power Source")
         char_title.setObjectName("CardTitle")
         self.char_value = QLabel("Checking...")
         self.char_value.setObjectName("StatusActive")
-        
+
         char_layout.addWidget(char_title)
         char_layout.addWidget(self.char_value)
         main_layout.addWidget(self.charger_card)
@@ -176,22 +182,21 @@ class DashboardWindow(QMainWindow):
         self.cpu_card = QFrame()
         self.cpu_card.setObjectName("Card")
         cpu_layout = QVBoxLayout(self.cpu_card)
-        
+
         cpu_title = QLabel("CPU Load")
         cpu_title.setObjectName("CardTitle")
         self.cpu_value = QLabel("--%")
         self.cpu_value.setObjectName("CardValue")
-        
+
         self.cpu_bar = QProgressBar()
         self.cpu_bar.setValue(0)
-        
+
         cpu_layout.addWidget(cpu_title)
         cpu_layout.addWidget(self.cpu_value)
         cpu_layout.addWidget(self.cpu_bar)
         main_layout.addWidget(self.cpu_card)
 
-#5 memory optimization card
-
+        #5 memory optimization card
         self.ram_card = QFrame()
         self.ram_card.setObjectName("Card")
         ram_layout = QVBoxLayout(self.ram_card)
@@ -202,10 +207,49 @@ class DashboardWindow(QMainWindow):
 
         self.btn_ram_clean = QPushButton("Clean RAM")
         self.btn_ram_clean.clicked.connect(self.handle_ram_cleanup)
-        
+
         ram_layout.addWidget(ram_title)
         ram_layout.addWidget(self.btn_ram_clean)
         main_layout.addWidget(self.ram_card)
+
+    def init_tray(self):
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_ComputerIcon))
+        self.tray_icon.setToolTip("LapPulse")
+
+        # Create the Tray Menu
+        tray_menu = QMenu()
+
+        # Action: Show App
+        show_action = QAction("Show App", self)
+        show_action.triggered.connect(self.showNormal)
+
+        # Action: Optimize RAM (New!)
+        optimize_action = QAction("Optimize RAM", self)
+        optimize_action.triggered.connect(self.handle_ram_cleanup)
+
+        # Action: Exit
+        quit_action = QAction("Exit", self)
+        quit_action.triggered.connect(QApplication.instance().quit)
+
+        tray_menu.addAction(show_action)
+        tray_menu.addSeparator()
+        tray_menu.addAction(optimize_action)
+        tray_menu.addSeparator()
+        tray_menu.addAction(quit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+        self.tray_icon.activated.connect(self.tray_icon_activated)
+
+    def tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.showNormal()
+            self.activateWindow()
+
+    def closeEvent(self, event):
+        self.hide()
+        event.ignore()
 
     def open_settings(self):
         dialog = SettingsDialog(self)
@@ -227,17 +271,17 @@ class DashboardWindow(QMainWindow):
 
     def update_dashboard(self):
         metrics = self.monitor.get_system_metrics()
-        
+
         self.bat_value.setText(f"{metrics['battery_percent']}%")
         self.bat_bar.setValue(int(metrics['battery_percent']))
-        
+
         self.cpu_value.setText(f"{metrics['cpu_usage']}%")
         self.cpu_bar.setValue(int(metrics['cpu_usage']))
-        
+
         if metrics['is_plugged']:
             self.char_value.setText("⚡ PLUGGED IN (Direct AC Power)")
             self.char_value.setStyleSheet("color: #34D399;")
-            
+
             if metrics['trigger_discharge_alert']:
                 from plyer import notification
                 notification.notify(
