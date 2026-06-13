@@ -1,4 +1,5 @@
 import json
+import winreg
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout,
     QHBoxLayout, QFrame, QProgressBar, QPushButton, QDialog,
@@ -8,6 +9,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QTimer, Qt, QEvent
 from lappulse.core.hardware import HardwareMonitor
+from lappulse.utils.startup import enable_startup, disable_startup
 
 DARK_QSS_PATH = "lappulse/ui/style.qss"
 LIGHT_QSS_PATH = "lappulse/ui/style_light.qss"
@@ -19,13 +21,23 @@ class SettingsDialog(QDialog):
         self.db_path = "lappulse_data.json"
         self.init_ui()
 
+    def is_startup_enabled():
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_READ)
+            winreg.QueryValueEx(key, "LapPulse")
+            return True
+        except:
+            return False
+
     def init_ui(self):
         self.setWindowTitle("Settings")
         self.setFixedSize(320, 280)
+        self.startup_check = QCheckBox("Launch LapPulse on Startup")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
+        layout.addWidget(self.startup_check)
 
         # Maintenance interval section
         lbl = QLabel("Set Maintenance Interval:")
@@ -105,6 +117,11 @@ class SettingsDialog(QDialog):
                 QApplication.instance().setStyleSheet(f.read())
         except FileNotFoundError:
             pass
+
+        if self.startup_check.isChecked():
+            enable_startup()
+        else:
+            disable_startup()
 
         self.accept()
 
